@@ -1,6 +1,6 @@
 {
   "name": "better-auth-university",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "A university plugin for Better Auth that allows restriction of email domains.",
   "author": "Jaren Goldberg <fyrlex@gmail.com>",
   "main": "dist/index.js",
@@ -15,6 +15,11 @@
       "import": "./dist/index.js",
       "types": "./dist/index.d.ts",
       "require": "./dist/index.js"
+    },
+    "./client": {
+      "import": "./dist/client.js",
+      "types": "./dist/client.d.ts",
+      "require": "./dist/client.js"
     }
   },
   "scripts": {
