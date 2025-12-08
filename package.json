@@ -1,0 +1,45 @@
+{
+  "name": "better-auth-university",
+  "version": "0.1.0",
+  "description": "A university plugin for Better Auth that allows restriction of email domains.",
+  "author": "Jaren Goldberg <fyrlex@gmail.com>",
+  "main": "dist/index.js",
+  "type": "module",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts",
+      "require": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "prepublishOnly": "npm run build"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/LuyxLLC/better-auth-university.git"
+  },
+  "keywords": [
+    "better-auth",
+    "auth",
+    "plugin",
+    "university"
+  ],
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/LuyxLLC/better-auth-university/issues"
+  },
+  "homepage": "https://github.com/LuyxLLC/better-auth-university#readme",
+  "peerDependencies": {
+    "better-auth": "^1.4.5"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3"
+  }
+}
