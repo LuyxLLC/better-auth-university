@@ -29,6 +29,13 @@ export interface UniversityResolverOptions {
    * Pass `['*']` to allow all domains.
    */
   allowedEmailDomains?: string[];
+  /**
+   * Whether to create a university entry if the email domain is not found
+   * in the provided list.
+   * 
+   * Defaults to `false`.
+   */
+  createIfNotFound?: boolean;
 }
 
 export const universityResolver = (options: UniversityResolverOptions): BetterAuthPlugin => {
@@ -86,13 +93,19 @@ export const universityResolver = (options: UniversityResolverOptions): BetterAu
                   }
                 });
               } else {
-                university = await adapter.create<University>({
-                  model: "university",
-                  data: {
-                    name: emailDomain,
-                    domain: emailDomain,
-                  }
-                });
+                if (options.createIfNotFound) {
+                  university = await adapter.create<University>({
+                    model: "university",
+                    data: {
+                      name: emailDomain,
+                      domain: emailDomain,
+                    }
+                  });
+                } else {
+                  throw new APIError("BAD_REQUEST", {
+                    message: "University not found for the provided email domain."
+                  });
+                }
               }
             }
 
