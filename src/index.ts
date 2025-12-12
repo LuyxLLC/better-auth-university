@@ -19,29 +19,20 @@ export interface UniversityData {
 }
 
 export interface UniversityResolverOptions {
+  /**
+   * List of universities to use for resolving email domains.
+   */
   universities: UniversityData[];
   /**
-   * List of allowed email domains or extensions.
+   * Disabling domain restrictions allows any email domain to be used
+   * for sign-up, even if it is not in the provided list of universities.
    * 
-   * Examples: ['.edu', '.ac.uk', 'mit.edu']
-   * If not provided, defaults to ['.edu'].
-   * 
-   * Pass `['*']` to allow all domains.
+   * Defaults to `true`.
    */
-  allowedEmailDomains?: string[];
-  /**
-   * Whether to create a university entry if the email domain is not found
-   * in the provided list.
-   * 
-   * Defaults to `false`.
-   */
-  createIfNotFound?: boolean;
+  enforceUniversityDomain?: boolean;
 }
 
-export const universityResolver = (options: UniversityResolverOptions): BetterAuthPlugin => {
-  const allowedDomains = options.allowedEmailDomains || ['.edu'];
-  const allowAll = allowedDomains.includes('*');
-
+export const universityResolver = ({ universities, enforceUniversityDomain = true }: UniversityResolverOptions): BetterAuthPlugin => {
   return {
     id: 'university-resolver',
     schema: mergeSchema(getSchema()),
@@ -58,17 +49,20 @@ export const universityResolver = (options: UniversityResolverOptions): BetterAu
               return;
             }
 
-            if (!allowAll) {
-              const isValid = allowedDomains.some(domain => email.endsWith(domain));
+            const emailDomain = email.split('@')[1];
+            const universityRecord = universities.find(university => university.domains.includes(emailDomain));
 
-              if (!isValid) {
+            if (!universityRecord) {
+              if (enforceUniversityDomain) {
                 throw new APIError("BAD_REQUEST", {
-                  message: `Email must end with one of the following: ${allowedDomains.join(', ')}`
+                  message: 'Email domain does not belong to a recognized university.',
+                  code: 'UNIVERSITY_DOMAIN_NOT_ALLOWED',
                 });
+              } else {
+                return;
               }
             }
 
-            const emailDomain = email.split('@')[1];
             const adapter = context.context.adapter;
 
             let university = await adapter.findOne<University>({
@@ -82,36 +76,16 @@ export const universityResolver = (options: UniversityResolverOptions): BetterAu
             });
 
             if (!university) {
-              const found = options.universities.find(university => university.domains.includes(emailDomain));
-
-              if (found) {
-                university = await adapter.create<University>({
-                  model: "university",
-                  data: {
-                    name: found.name,
-                    domain: emailDomain,
-                  }
-                });
-              } else {
-                if (options.createIfNotFound) {
-                  university = await adapter.create<University>({
-                    model: "university",
-                    data: {
-                      name: emailDomain,
-                      domain: emailDomain,
-                    }
-                  });
-                } else {
-                  throw new APIError("BAD_REQUEST", {
-                    message: "University not found for the provided email domain."
-                  });
+              university = await adapter.create<University>({
+                model: "university",
+                data: {
+                  name: universityRecord.name,
+                  domain: emailDomain,
                 }
-              }
+              });
             }
 
-            if (university) {
-              context.body.universityId = university.id;
-            }
+            context.body.universityId = university.id;
           })
         }
       ]
