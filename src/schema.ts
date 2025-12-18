@@ -29,6 +29,12 @@ export const getSchema = () => {
           unique: true,
           returned: true,
         },
+        slug: {
+          type: "string",
+          required: true,
+          unique: true,
+          returned: true,
+        },
       },
     },
   } satisfies BetterAuthPluginDBSchema;

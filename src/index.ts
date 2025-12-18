@@ -7,6 +7,7 @@ export interface University {
   id: string;
   name: string;
   domain: string;
+  slug: string;
 }
 
 export interface UniversityData {
@@ -16,6 +17,7 @@ export interface UniversityData {
   country: string;
   alpha_two_code: string;
   "state-province": string | null;
+  slug: string;
 }
 
 export interface UniversityResolverOptions {
@@ -81,6 +83,7 @@ export const universityResolver = ({ universities, enforceUniversityDomain = tru
                 data: {
                   name: universityRecord.name,
                   domain: emailDomain,
+                  slug: universityRecord.slug,
                 }
               });
             }
