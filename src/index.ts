@@ -34,64 +34,62 @@ export interface UniversityResolverOptions {
   enforceUniversityDomain?: boolean;
 }
 
-export const universityResolver = ({ universities, enforceUniversityDomain = true }: UniversityResolverOptions): BetterAuthPlugin => {
-  return {
-    id: 'university-resolver',
-    schema: mergeSchema(getSchema()),
-    hooks: {
-      before: [
-        {
-          matcher: (context) => {
-            return context.path === '/sign-up/email';
-          },
-          handler: createAuthMiddleware(async (context) => {
-            const { email } = context.body;
+export const universityResolver = ({ universities, enforceUniversityDomain = true }: UniversityResolverOptions) => ({
+  id: 'university-resolver',
+  schema: mergeSchema(getSchema()),
+  hooks: {
+    before: [
+      {
+        matcher: (context) => {
+          return context.path?.startsWith('/sign-up/email') ?? false;
+        },
+        handler: createAuthMiddleware(async (context) => {
+          const { email } = context.body;
 
-            if (!email || typeof email !== 'string') {
+          if (!email || typeof email !== 'string') {
+            return;
+          }
+
+          const emailDomain = email.split('@')[1];
+          const universityRecord = universities.find(university => university.domains.includes(emailDomain));
+
+          if (!universityRecord) {
+            if (enforceUniversityDomain) {
+              throw new APIError("BAD_REQUEST", {
+                message: 'Email domain does not belong to a recognized university.',
+                code: 'UNIVERSITY_DOMAIN_NOT_ALLOWED',
+              });
+            } else {
               return;
             }
+          }
 
-            const emailDomain = email.split('@')[1];
-            const universityRecord = universities.find(university => university.domains.includes(emailDomain));
+          const adapter = context.context.adapter;
 
-            if (!universityRecord) {
-              if (enforceUniversityDomain) {
-                throw new APIError("BAD_REQUEST", {
-                  message: 'Email domain does not belong to a recognized university.',
-                  code: 'UNIVERSITY_DOMAIN_NOT_ALLOWED',
-                });
-              } else {
-                return;
+          let university = await adapter.findOne<University>({
+            model: "university",
+            where: [
+              {
+                field: "domain",
+                value: emailDomain
               }
-            }
+            ]
+          });
 
-            const adapter = context.context.adapter;
-
-            let university = await adapter.findOne<University>({
+          if (!university) {
+            university = await adapter.create<University>({
               model: "university",
-              where: [
-                {
-                  field: "domain",
-                  value: emailDomain
-                }
-              ]
+              data: {
+                name: universityRecord.name,
+                domain: emailDomain,
+                slug: universityRecord.slug,
+              }
             });
+          }
 
-            if (!university) {
-              university = await adapter.create<University>({
-                model: "university",
-                data: {
-                  name: universityRecord.name,
-                  domain: emailDomain,
-                  slug: universityRecord.slug,
-                }
-              });
-            }
-
-            context.body.universityId = university.id;
-          })
-        }
-      ]
-    },
-  };
-};
+          context.body.universityId = university.id;
+        })
+      }
+    ]
+  },
+} satisfies BetterAuthPlugin);
