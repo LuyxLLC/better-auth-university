@@ -43,7 +43,7 @@
   },
   "homepage": "https://github.com/LuyxLLC/better-auth-university#readme",
   "peerDependencies": {
-    "better-auth": "^1.4.8"
+    "better-auth": "^1.6.27"
   },
   "devDependencies": {
     "typescript": "^5.9.3"
